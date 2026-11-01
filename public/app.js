@@ -67,8 +67,11 @@ async function checkApplicantStatus(code, remember = false, silent = false) {
   if (!silent) result.innerHTML = '<span class="status-loading"><i></i> Status ophalen…</span>';
   try {
     const data = await post('/api/application-status', { code:value });
-    if (remember) { try { localStorage.setItem('staffApplicationTrackingCode', value); } catch {} state.applicantCode = value; }
     const application = data.application;
+    let previousStatus = '';
+    try { previousStatus = localStorage.getItem(`staffApplicationLastStatus:${value}`) || ''; localStorage.setItem(`staffApplicationLastStatus:${value}`, application.status); } catch {}
+    if (remember) { try { localStorage.setItem('staffApplicationTrackingCode', value); } catch {} state.applicantCode = value; }
+    if (previousStatus && previousStatus !== application.status) toast(`Melding: je sollicitatiestatus is gewijzigd naar ${labels[application.status] || application.status}.`);
     result.innerHTML = `<div class="status-card"><div><span class="status-caption">STATUS · ${esc(application.role)}</span><h3>${esc(labels[application.status] || 'Bijgewerkt')}</h3><p>${esc(statusMessage(application.status))}</p><small>Ingediend ${date(application.createdAt)} · Status bijgewerkt ${date(application.updatedAt)}</small></div><button class="secondary" type="button" data-action="refresh-applicant-status">Vernieuwen</button></div>${state.applicantCode ? '<button class="forget-tracking" type="button" data-action="forget-tracking">Vergeet deze code op dit apparaat</button>' : ''}`;
   } catch (error) {
     if (!silent) result.innerHTML = `<p class="status-error" role="alert">${esc(error.message)}</p>`;
@@ -93,7 +96,7 @@ app.addEventListener('click', async event => {
   if (action === 'close-success') closeSuccess();
   if (action === 'show-status') { closeSuccess(); document.querySelector('#sollicitant-status')?.scrollIntoView({ behavior:'smooth' }); if (state.applicantCode) await checkApplicantStatus(state.applicantCode, true); }
   if (action === 'refresh-applicant-status') await checkApplicantStatus(document.querySelector('#trackingCode')?.value || state.applicantCode, Boolean(document.querySelector('#rememberTracking')?.checked));
-  if (action === 'forget-tracking') { state.applicantCode = ''; try { localStorage.removeItem('staffApplicationTrackingCode'); } catch {} const input = document.querySelector('#trackingCode'); if (input) input.value = ''; const remember = document.querySelector('#rememberTracking'); if (remember) remember.checked = false; const result = document.querySelector('#statusResult'); if (result) result.textContent = 'De volgcode is van dit apparaat verwijderd.'; }
+  if (action === 'forget-tracking') { const forgottenCode = state.applicantCode; state.applicantCode = ''; try { localStorage.removeItem('staffApplicationTrackingCode'); localStorage.removeItem(`staffApplicationLastStatus:${forgottenCode}`); } catch {} const input = document.querySelector('#trackingCode'); if (input) input.value = ''; const remember = document.querySelector('#rememberTracking'); if (remember) remember.checked = false; const result = document.querySelector('#statusResult'); if (result) result.textContent = 'De volgcode is van dit apparaat verwijderd.'; }
   if (action === 'copy-tracking-code') { try { await navigator.clipboard.writeText(state.applicantCode); toast('Volgcode gekopieerd'); } catch { toast('Kopiëren lukte niet. Selecteer de code en kopieer hem handmatig.'); } }
   if (action === 'copy-applicant-code') { try { await navigator.clipboard.writeText(button.dataset.code); toast('Volgcode gekopieerd. Stuur hem zelf via Discord naar de sollicitant.'); } catch { toast('Kopiëren lukte niet. Selecteer de code en kopieer hem handmatig.'); } }
   if (action === 'choose-role') { document.querySelector('#role').value = button.dataset.role; document.querySelector('#solliciteren').scrollIntoView({ behavior: 'smooth' }); setTimeout(() => document.querySelector('#discord')?.focus({ preventScroll: true }), 450); }
