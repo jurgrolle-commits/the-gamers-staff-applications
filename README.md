@@ -10,7 +10,7 @@ De gratis Cloudflare Workers- en D1-plannen hebben gebruikslimieten, maar vragen
 2. Open PowerShell in deze projectmap en voer `npx wrangler login` uit. Meld je aan bij Cloudflare en bevestig de CLI-koppeling.
 3. Voer `npx wrangler d1 create the-gamers-staff-applications` uit. Kopieer de getoonde `database_id` naar `database_id` in `wrangler.jsonc`.
 4. Maak de tabellen aan met `npx wrangler d1 execute the-gamers-staff-applications --remote --file=schema.sql`.
-5. Stel een owner-code in met `npx wrangler secret put OWNER_CODE`. Gebruik minimaal 8 tekens; de code wordt nooit in de repository gezet.
+5. Stel een owner-PIN in met `npx wrangler secret put OWNER_CODE`. Gebruik precies 4 cijfers; de PIN wordt nooit in de repository gezet.
 6. Publiceer de site met `npx wrangler deploy`. Cloudflare toont daarna de openbare `workers.dev`-link.
 
 Sollicitaties blijven in D1 bewaard bij nieuwe deploys en herstarts. Cloudflare Workers Free heeft een dagelijkse requestlimiet en D1 Free heeft dagelijkse lees-/schrijflimieten en een opslaglimiet. Als die limieten ooit worden overschreden, kan de site tijdelijk geen verzoeken verwerken; er volgen geen automatische usage-kosten op het gratis plan.
@@ -19,7 +19,7 @@ Sollicitaties blijven in D1 bewaard bij nieuwe deploys en herstarts. Cloudflare 
 
 Vereist Node.js 22.13 of nieuwer. Er zijn geen externe Node-pakketten nodig.
 
-1. Voer `node server.mjs setup-owner` uit en stel een owner-code in van minimaal 8 tekens.
+1. Voer `node server.mjs setup-owner` uit en stel een owner-PIN in van precies 4 cijfers.
 2. Start met `node server.mjs`.
 3. Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
