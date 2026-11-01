@@ -96,7 +96,16 @@ async function handle(request, env) {
     const a = validateApplication(await body(request)), id = crypto.randomUUID(), now = new Date().toISOString();
     await db.prepare('INSERT INTO applications (id,discord,age,role,experience,motivation,availability,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,a.discord,a.age,a.role,a.experience,a.motivation,a.availability,'new',now).run();
     await db.prepare('INSERT INTO status_history (application_id,status,created_at) VALUES (?,?,?)').bind(id,'new',now).run();
-    return json({ ok:true, message:'Je sollicitatie is ontvangen. Bedankt! We nemen contact met je op via Discord.' },201);
+    return json({ ok:true, trackingCode:id, message:'Je sollicitatie is ontvangen. Bewaar je persoonlijke volgcode om je status te bekijken.' },201);
+  }
+  if (path === '/api/application-status' && request.method === 'POST') {
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (!await takeLimit(db, `status:${await digest(ip)}`, 30, 900000)) return json({ error:'Je hebt vaak een status gecontroleerd. Probeer het over 15 minuten opnieuw.' },429);
+    const { code } = await body(request), id = text(code,64).toLowerCase();
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return json({ error:'We konden geen sollicitatie met deze volgcode vinden.' },404);
+    const row = await db.prepare('SELECT a.role,a.status,a.created_at,(SELECT h.created_at FROM status_history h WHERE h.application_id=a.id ORDER BY h.id DESC LIMIT 1) AS status_updated_at FROM applications a WHERE a.id=?').bind(id).first();
+    if (!row) return json({ error:'We konden geen sollicitatie met deze volgcode vinden.' },404);
+    return json({ application:{role:row.role,status:row.status,createdAt:row.created_at,updatedAt:row.status_updated_at||row.created_at} });
   }
   if (path === '/api/auth/login' && request.method === 'POST') {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
