@@ -92,7 +92,7 @@ async function handle(request, env) {
   }
   if (path === '/api/applications' && request.method === 'POST') {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    if (!await takeLimit(db, `submit:${ip}`, 4, 3600000)) return json({ error: 'Er zijn te veel sollicitaties verstuurd vanaf dit netwerk. Probeer het later opnieuw.' }, 429);
+    if (!await takeLimit(db, `submit:${await digest(ip)}`, 4, 3600000)) return json({ error: 'Er zijn te veel sollicitaties verstuurd vanaf dit netwerk. Probeer het later opnieuw.' }, 429);
     const a = validateApplication(await body(request)), id = crypto.randomUUID(), now = new Date().toISOString();
     await db.prepare('INSERT INTO applications (id,discord,age,role,experience,motivation,availability,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)').bind(id,a.discord,a.age,a.role,a.experience,a.motivation,a.availability,'new',now).run();
     await db.prepare('INSERT INTO status_history (application_id,status,created_at) VALUES (?,?,?)').bind(id,'new',now).run();
@@ -100,10 +100,12 @@ async function handle(request, env) {
   }
   if (path === '/api/auth/login' && request.method === 'POST') {
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-    if (!await takeLimit(db, `login:${ip}`, 5, 900000)) return json({ error:'Te veel mislukte inlogpogingen. Probeer het over 15 minuten opnieuw.' },429);
+    const loginBucket = `login:${await digest(ip)}`;
+    if (!await takeLimit(db, loginBucket, 5, 900000)) return json({ error:'Te veel mislukte inlogpogingen. Probeer het over 15 minuten opnieuw.' },429);
     const { password } = await body(request), secret = text(password,128), owner = await ensureOwner(db,env.OWNER_CODE);
     if (!owner) return json({ error:'De owner-login is nog niet ingesteld.' },503);
     if (!equal(await passwordHash(secret,owner.salt),owner.hash)) return json({ error:'De pincode of het wachtwoord klopt niet.' },401);
+    await db.prepare('DELETE FROM rate_limits WHERE bucket=?').bind(loginBucket).run();
     const token=random(32), tokenHash=await digest(token), now=Date.now();
     await db.prepare('DELETE FROM sessions WHERE expires_at<=?').bind(now).run();
     await db.prepare('INSERT INTO sessions (token_hash,expires_at,created_at) VALUES (?,?,?)').bind(tokenHash,now+SESSION_MS,now).run();
