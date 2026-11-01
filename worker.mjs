@@ -11,7 +11,7 @@ const digest = async value => hex(await crypto.subtle.digest('SHA-256', new Text
 
 async function passwordHash(password, salt) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']);
-  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: unhex(salt), iterations: 160000 }, key, 256));
+  return hex(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: unhex(salt), iterations: 100000 }, key, 256));
 }
 function equal(a, b) {
   if (!a || !b || a.length !== b.length) return false;
@@ -157,7 +157,7 @@ async function handle(request, env) {
 export default {
   async fetch(request, env) {
     try { return withSecurity(await handle(request,env)); }
-    catch (error) { return json({error:error.status?error.message:'Er ging iets mis. Probeer het opnieuw.'},error.status||500); }
+    catch (error) { console.error(error); return json({error:error.status?error.message:'Er ging iets mis. Probeer het opnieuw.'},error.status||500); }
   }
 };
 
