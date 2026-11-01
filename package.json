@@ -1,0 +1,11 @@
+{
+  "name": "discord-server-staff-applications",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nederlandstalige sollicitatiesite voor een Discord-community met SQLite-opslag en owner-login.",
+  "engines": { "node": ">=22.13.0" },
+  "scripts": {
+    "start": "node server.mjs",
+    "owner:setup": "node server.mjs setup-owner"
+  }
+}
