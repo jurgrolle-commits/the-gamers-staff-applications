@@ -63,7 +63,7 @@ async function takeLimit(db, key, max, windowMs) {
 }
 async function ensureOwner(db, secret) {
   let owner = await db.prepare('SELECT salt, hash FROM owner WHERE id=1').first();
-  if (!owner && secret && secret.length >= 8) {
+  if (!owner && secret && /^\d{4}$/.test(secret)) {
     const salt = random(16), hash = await passwordHash(secret, salt);
     await db.prepare('INSERT OR IGNORE INTO owner (id, salt, hash, created_at) VALUES (1, ?, ?, ?)').bind(salt, hash, new Date().toISOString()).run();
     owner = await db.prepare('SELECT salt, hash FROM owner WHERE id=1').first();
