@@ -83,11 +83,11 @@ async function setupOwner() {
     console.log('Er is al een owner-login ingesteld.');
     rl.close(); return;
   }
-  const password = await promptSecret('Kies een owner-code (minimaal 8 tekens; invoer blijft verborgen): ');
+  const password = await promptSecret('Kies een owner-PIN (precies 4 cijfers; invoer blijft verborgen): ');
   const confirm = await promptSecret('Voer de owner-code nogmaals in: ');
   rl.close();
-  if (password.length < 8 || password !== confirm) {
-    console.error('Niet opgeslagen: gebruik minimaal 8 tekens en voer beide keren dezelfde code in.');
+  if (!/^\d{4}$/.test(password) || password !== confirm) {
+    console.error('Niet opgeslagen: gebruik precies 4 cijfers en voer beide keren dezelfde PIN in.');
     process.exitCode = 1; return;
   }
   const salt = randomBytes(16);
@@ -103,7 +103,7 @@ const ownerExists = () => Boolean(db.prepare('SELECT id FROM owner WHERE id=1').
 // On a fresh hosted install, accept the owner code only from the server's secret
 // environment. The code is immediately salted and hashed; it is never logged.
 if (!ownerExists() && process.env.OWNER_CODE) {
-  if (process.env.OWNER_CODE.length < 8) throw new Error('OWNER_CODE moet minimaal 8 tekens bevatten.');
+  if (!/^\d{4}$/.test(process.env.OWNER_CODE)) throw new Error('OWNER_CODE moet uit precies 4 cijfers bestaan.');
   const salt = randomBytes(16);
   const hash = await scrypt(process.env.OWNER_CODE, salt, 64);
   db.prepare('INSERT INTO owner (id,salt,hash,created_at) VALUES (1,?,?,?)')
@@ -247,3 +247,4 @@ if(!ownerExists()) console.warn('Owner-login ontbreekt. Stel deze eenmalig in me
 const server=http.createServer((req,res)=>{handle(req,res).catch(error=>{if(res.headersSent){res.destroy();return;}const status=error.status||500;if(status===500)console.error(error);json(res,status,{error:status===500?'Er ging iets mis. Probeer het opnieuw.':error.message});});});
 server.listen(PORT,HOST,()=>console.log(`De sollicitatiesite is bereikbaar op http://${HOST}:${PORT}`));
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.close(()=>{db.close();process.exit(0)}));
+
