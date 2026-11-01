@@ -3,6 +3,7 @@
   "name": "the-gamers-staff-applications",
   "main": "worker.mjs",
   "compatibility_date": "2026-11-01",
+  "workers_dev": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
