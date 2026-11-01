@@ -1,39 +1,43 @@
 # Sollicitatiesite voor een Discord-server
 
-Een interactieve, Nederlandstalige webapp voor sollicitaties bij een Discord-server. De aanvraag vraagt om een Discord-gebruikersnaam, leeftijd, rol, ervaring, motivatie en beschikbaarheid. De browserinterface praat met een Node.js-server. Inzendingen, statussen en interne notities worden opgeslagen in SQLite in `data/applications.sqlite`; de owner-code wordt eenmalig gehasht ingesteld en blijft op de server. Er staan geen voorbeeldsollicitaties of standaardcodes in het project.
+Nederlandstalige site met sollicitaties voor Moderator, Manager of Administrator. Het dashboard is alleen toegankelijk voor de owner. Nieuwe sollicitaties, statussen, archivering en interne notities worden opgeslagen in SQLite tijdens lokaal gebruik en in Cloudflare D1 bij gratis online hosting.
 
-## Eenmalig instellen
+## Gratis online publiceren
+
+De gratis Cloudflare Workers- en D1-plannen hebben gebruikslimieten, maar vragen geen betaalkaart voor dit project. Cloudflare-account nodig.
+
+1. Installeer Node.js 22 of nieuwer.
+2. Open PowerShell in deze projectmap en voer `npx wrangler login` uit. Meld je aan bij Cloudflare en bevestig de CLI-koppeling.
+3. Voer `npx wrangler d1 create the-gamers-staff-applications` uit. Kopieer de getoonde `database_id` naar `database_id` in `wrangler.jsonc`.
+4. Maak de tabellen aan met `npx wrangler d1 execute the-gamers-staff-applications --remote --file=schema.sql`.
+5. Stel een owner-code in met `npx wrangler secret put OWNER_CODE`. Gebruik minimaal 8 tekens; de code wordt nooit in de repository gezet.
+6. Publiceer de site met `npx wrangler deploy`. Cloudflare toont daarna de openbare `workers.dev`-link.
+
+Sollicitaties blijven in D1 bewaard bij nieuwe deploys en herstarts. Cloudflare Workers Free heeft een dagelijkse requestlimiet en D1 Free heeft dagelijkse lees-/schrijflimieten en een opslaglimiet. Als die limieten ooit worden overschreden, kan de site tijdelijk geen verzoeken verwerken; er volgen geen automatische usage-kosten op het gratis plan.
+
+## Lokaal gebruiken
 
 Vereist Node.js 22.13 of nieuwer. Er zijn geen externe Node-pakketten nodig.
 
-1. Open een terminal in deze projectmap.
-2. Stel je owner-code in: `pnpm owner:setup` (of `node server.mjs setup-owner`). Kies minimaal 8 tekens. De invoer wordt verborgen. De code wordt gehasht opgeslagen; bewaar de code zelf in je wachtwoordmanager.
-3. Start de site: `pnpm start` (of `node server.mjs`).
-4. Open [http://127.0.0.1:3000](http://127.0.0.1:3000). Klik op **Owner login** en gebruik de code die je zojuist instelde.
+1. Voer `node server.mjs setup-owner` uit en stel een owner-code in van minimaal 8 tekens.
+2. Start met `node server.mjs`.
+3. Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
-Als je de code kwijt bent, wijzig deze dan niet in een bronbestand. Stop de server, maak een back-up van de map `data/`, verwijder alleen het owner-account via een beheerprocedure of herstel de database uit een bekende veilige back-up. Het verwijderen van de database verwijdert ook sollicitaties.
+Lokale inzendingen staan in `data/applications.sqlite`. De map `data/` staat in `.gitignore` en wordt nooit meegestuurd met de broncode.
 
-## Wat is inbegrepen
+## Inbegrepen
 
-- Sollicitatieformulier voor Moderator, Manager of Administrator, met invoercontrole in de browser én server.
-- Eigenaar-login met geheime code buiten de browsercode, een `scrypt`-wachtwoordhash, een HttpOnly/SameSite-cookie, serversessies en beperkte inlogpogingen.
-- Privé dashboard met zoekbalk, statusfilters, totalen en aanklikbare sollicitaties.
-- Kandidaatdetails, statusgeschiedenis, status wijzigen en interne owner-notities.
-- Aanvragen archiveren, vanuit het archief terugzetten en na een aparte bevestiging definitief verwijderen.
-- SQLite-opslag die sollicitaties bewaart na verversen of opnieuw opstarten.
-- Rate limiting voor inloggen en openbare inzendingen, same-origin controle op wijzigingen en browserbeveiligingsheaders.
+- Responsive Nederlandstalig formulier en duidelijke ontvangstmelding.
+- Owner-login met server-side geheime code, gehashte opslag en veilige sessiecookie.
+- Privé dashboard met filters, aanklikbare sollicitaties en interne notities.
+- Status wijzigen, archiveren, terugzetten en definitief verwijderen.
+- Invoercontrole, limieten op inloggen en inzendingen en beveiligingsheaders.
 
-## Openbaar hosten
+## Projectbestanden
 
-De app draait direct op de machine waarop Node.js draait. Om haar openbaar te maken is een host of VPS nodig. Plaats de Node-server achter een reverse proxy met HTTPS, zet `NODE_ENV=production`, kies een geheime bind-adres/poort via `HOST` en `PORT`, en bewaar de map `data/` op een permanente, alleen voor de server toegankelijke schijf. In productie markeert de app de sessiecookie automatisch als `Secure`; HTTPS is daar dus vereist. Zet de publieke beheer- en databasepaden niet open via statische hosting. Maak versleutelde, beperkte back-ups van de database en test herstel.
-
-De server vertrouwt geen `X-Forwarded-For`-header, om vervalsbare IP-adressen voor de ingebouwde limieten te vermijden. Als je de site achter een proxy openbaar maakt, stel dan ook daar limieten in voor inloggen en inzendingen.
-
-## Projectindeling
-
-- `server.mjs` — Node-server, authenticatie, API en SQLite
-- `public/app.js` — interactieve browserapp
-- `public/styles.css` — responsive ontwerp
-- `public/index.html` — minimale browserstartpagina die de interactieve app laadt
-- `data/` — wordt automatisch aangemaakt voor de blijvende database en staat in `.gitignore`
+- `server.mjs` — lokale Node.js-server en SQLite-opslag
+- `worker.mjs` — Cloudflare Worker API met D1-opslag
+- `schema.sql` — D1-tabellen
+- `wrangler.jsonc` — gratis Cloudflare-deployconfiguratie
+- `public/` — browserinterface
 
