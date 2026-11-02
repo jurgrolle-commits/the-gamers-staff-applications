@@ -45,7 +45,7 @@ function validateApplication(data) {
   const a = { discord: text(data.discord, 64), age: Number(data.age), role: text(data.role, 40), experience: text(data.experience, 1500), motivation: text(data.motivation, 2000), availability: text(data.availability, 120) };
   if (data.consent !== true) throw fail('Geef toestemming voordat je je sollicitatie verstuurt.');
   if (a.discord.length < 2) throw fail('Vul je Discord-gebruikersnaam in.');
-  if (!Number.isInteger(a.age) || a.age < 13 || a.age > 99) throw fail('Vul een geldige leeftijd in (13–99).');
+  if (!Number.isInteger(a.age) || a.age < 1 || a.age > 120) throw fail('Vul een geldige leeftijd in. Er geldt geen minimumleeftijd.');
   if (!ROLES.has(a.role)) throw fail('Kies een van de beschikbare rollen.');
   if (a.experience.length < 10) throw fail('Vertel iets over je ervaring (minimaal 10 tekens).');
   if (a.motivation.length < 20) throw fail('Je motivatie is te kort (minimaal 20 tekens).');
