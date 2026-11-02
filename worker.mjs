@@ -27,6 +27,8 @@ function cookieHeader(value, maxAge) {
 }
 function withSecurity(response) {
   const h = new Headers(response.headers);
+  // Staff applications need to show the latest form after each deployment.
+  h.set('Cache-Control', 'no-store');
   h.set('X-Content-Type-Options', 'nosniff');
   h.set('X-Frame-Options', 'DENY');
   h.set('Referrer-Policy', 'strict-origin-when-cross-origin');
